@@ -1,3 +1,6 @@
+//TODO: per fare l'interazione con l'utente => tramite raycaster!!
+
+
 // Find the latest version by visiting https://cdn.skypack.dev/three.
   
 import * as THREE from 'https://cdn.skypack.dev/three@0.126.1';
@@ -6,16 +9,24 @@ import {OrbitControls} from 'https://unpkg.com/three@0.126.1/examples/jsm/contro
 import * as dat from 'dat.gui'
 
 const gui = new dat.GUI()
+const canvas = document.querySelector('canvas.webgl')
+
 const world = {
   grid: {
-    height: 10,
-    width: 10,
+    height: 20,
+    width: 20,
     spacing: 1.5
-  }
+  },
+  world_representation: undefined,
 }
 
-// the grid world is represented by an integers matrix of which dimensions are specified in the "world" class (height and width)
-// the matrix contains boolean data (anche se in js 'boolean' vuol dire tutto e niente) 
+
+world.world_representation = Array.from(Array(world.grid.width), _ => Array(world.grid.height).fill(0))
+console.log(world.world_representation)
+
+// the grid world is represented by an integers matrix (world representation) of which dimensions are specified by the height and width attributes
+// the matrix contains boolean data (anche se in js 'boolean' vuol dire tutto e niente.. probabilmente boolean saranno simulati come integers) 
+
 
 gui.add(world.grid, 'width', 1, 50).onChange(() => {
   //refactor.. per ora fa un po' cagare, codice super ripetuto.....
@@ -61,8 +72,10 @@ const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 10
 
 
 
-const renderer = new THREE.WebGLRenderer(
-
+const renderer = new THREE.WebGLRenderer({
+  canvas: canvas,
+  alpha: true
+}
 )
 
 //console.log(scene)
@@ -103,8 +116,8 @@ function animate(){
   requestAnimationFrame(animate)
   renderer.render(scene, camera)
   raycaster.setFromCamera(mouse, camera)
-  const intersects = raycaster.intersectObject(grid)
-  console.log(intersects)
+  const intersects = raycaster.intersectObject(grid) //TODO: qui permette di fare la selezione di un cubetto. qui per poter permettere all'utente di selezionare la configurazione iniziale
+  //console.log(intersects)
 }
 
 
