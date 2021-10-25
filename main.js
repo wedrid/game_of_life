@@ -8,67 +8,48 @@ import {OrbitControls} from 'https://unpkg.com/three@0.126.1/examples/jsm/contro
   
 import * as dat from 'dat.gui'
 
+//TODO: move next two functions in some utils file
+function componentToHex(c) {
+  var hex = c.toString(16);
+  return hex.length == 1 ? "0" + hex : hex;
+}
+function rgbToHex(r, g, b) {
+  console.log(g)
+  return "0x" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
+
 const gui = new dat.GUI()
 const canvas = document.querySelector('canvas.webgl')
 
 const world = {
-  grid: {
+  gui_grid: {
     height: 20,
     width: 20,
-    spacing: 1.5
+    spacing: 1.5, 
+    color: 0x00ff00
   },
   world_representation: undefined,
 }
 
 
-world.world_representation = Array.from(Array(world.grid.width), _ => Array(world.grid.height).fill(0))
+world.world_representation = Array.from(Array(world.gui_grid.width), _ => Array(world.gui_grid.height).fill(0))
 console.log(world.world_representation)
 
-// the grid world is represented by an integers matrix (world representation) of which dimensions are specified by the height and width attributes
+// the gui_grid world is represented by an integers matrix (world representation) of which dimensions are specified by the height and width attributes
 // the matrix contains boolean data (anche se in js 'boolean' vuol dire tutto e niente.. probabilmente boolean saranno simulati come integers) 
 
 
-gui.add(world.grid, 'width', 1, 50).onChange(() => {
+gui.add(world.gui_grid, 'color').onChange(() => { //FIXME:
   //refactor.. per ora fa un po' cagare, codice super ripetuto.....
-  scene.remove(grid)
-    var hCount = world.grid.width,
-      vCount = world.grid.height,
-      spacing = world.grid.spacing;
-  grid = new THREE.Object3D(); 
-  for (var h=0; h<hCount; h+=1) {
-      for (var v=0; v<vCount; v+=1) {
-          var box = new THREE.Mesh(new THREE.BoxGeometry(1,1,1),
-                        new THREE.MeshBasicMaterial());
-          box.position.x = (h-hCount/2) * spacing;
-          box.position.y = (v-vCount/2) * spacing;
-          grid.add(box);
-      }
-  }
-  scene.add(grid);
-})
-
-gui.add(world.grid, 'height', 1, 50).onChange(() => {
-  scene.remove(grid)
-    var hCount = world.grid.width,
-      vCount = world.grid.height,
-      spacing = world.grid.spacing;
-  grid = new THREE.Object3D(); 
-  for (var h=0; h<hCount; h+=1) {
-      for (var v=0; v<vCount; v+=1) {
-          var box = new THREE.Mesh(new THREE.BoxGeometry(1,1,1),
-                        new THREE.MeshBasicMaterial());
-          box.position.x = (h-hCount/2) * spacing;
-          box.position.y = (v-vCount/2) * spacing;
-          grid.add(box);
-      }
-  }
-  scene.add(grid);
+  console.log(gui_grid.children)
 })
 
 
-const raycaster = new THREE.Raycaster();
+
+
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1000)
+const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 1000)
 
 
 
@@ -86,38 +67,57 @@ renderer.setSize(innerWidth, innerHeight)
 renderer.setPixelRatio(devicePixelRatio) //could make rendering slower (?)
 document.body.appendChild(renderer.domElement)
 
-new OrbitControls(camera, renderer.domElement)
+var orbit = new OrbitControls(camera, renderer.domElement)
 camera.position.z = 50
 const light = new THREE.DirectionalLight( 0xffffff , 1)
 light.position.set(0, 0, 1)
-scene.add(light)
+//scene.add(light)
 
-var hCount = world.grid.width,
-    vCount = world.grid.height,
-    spacing = world.grid.spacing;
-var grid = new THREE.Object3D(); 
+var hCount = world.gui_grid.width,
+    vCount = world.gui_grid.height,
+    spacing = world.gui_grid.spacing;
+var gui_grid = new THREE.Object3D(); 
 for (var h=0; h<hCount; h+=1) {
     for (var v=0; v<vCount; v+=1) {
-        var box = new THREE.Mesh(new THREE.BoxGeometry(1,1,1),
-                      new THREE.MeshBasicMaterial({ color: 0x00ff10, }));
+        var box_geometry = new THREE.BoxGeometry(1,1,1)
+        var box = new THREE.Mesh(box_geometry,
+                      new THREE.MeshBasicMaterial({ color: world.gui_grid.color, }));
         box.position.x = (h-hCount/2) * spacing;
         box.position.y = (v-vCount/2) * spacing;
-        grid.add(box);
+        gui_grid.add(box);
     }
 }
-scene.add(grid);
+scene.add(gui_grid);
 
-const mouse = {
-  x: undefined, 
-  y: undefined
-}
+const mouse = new THREE.Vector2();
+const raycaster = new THREE.Raycaster();
 
+
+//FIXME: click isn't good enough, serve qualche guardia.. altrimenti se si clicca e tiene premuto fa casino
+addEventListener('click', () => {
+  mouse.x = (event.clientX / innerWidth) * 2 - 1
+  mouse.y = -(event.clientY / innerHeight) * 2 + 1
+
+  console.log(mouse)
+})
+
+//orbit.enabled = false; //to disable orbit control if in edit mode
 function animate(){
   requestAnimationFrame(animate)
-  renderer.render(scene, camera)
-  raycaster.setFromCamera(mouse, camera)
-  const intersects = raycaster.intersectObject(grid) //TODO: qui permette di fare la selezione di un cubetto. qui per poter permettere all'utente di selezionare la configurazione iniziale
-  //console.log(intersects)
+  //renderer.render(scene, camera)
+  raycaster.setFromCamera( mouse, camera );
+  const intersects = raycaster.intersectObjects( gui_grid.children );
+  //console.log(gui_grid.children)
+
+	for ( let i = 0; i < intersects.length; i++ ) {
+
+		intersects[ i ].object.material.color.set( 0xff0000 );
+    //onsole.log(intersects[i])
+	}
+  //console.log(intersects);
+  //gui_grid.rotation.x += 0.001
+  
+	renderer.render( scene, camera );
 }
 
 
@@ -125,9 +125,3 @@ animate()
 
 
 
-addEventListener('mousemove', () => {
-  mouse.x = (event.clientX / innerWidth) * 2 - 1
-  mouse.y = (event.clientY / innerHeight) * 2 + 1
-
-  console.log(mouse)
-})
