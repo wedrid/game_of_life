@@ -1,6 +1,11 @@
-//TODO: per fare l'interazione con l'utente => tramite raycaster!!
-
 //Here after, I try to improve my js.. the first trial was pretty bad code
+//Some js initialization 
+// Find the latest version by visiting https://cdn.skypack.dev/three.
+import * as THREE from 'https://cdn.skypack.dev/three@0.126.1';
+import {OrbitControls} from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js';
+import * as dat from 'dat.gui';
+
+
 class Model{
   constructor(width, height) {
     //the gol-world will be represented as a 2x2 matrix of which states are 0 - dead or 1 - alive
@@ -64,10 +69,87 @@ class Model{
 
 
 class View{
-  constructor() {
+  constructor()
+  {
+    /*
+      this.camera = camera;
+      this.scene = scene;
+      this.controls = controls;
+      this.renderer = renderer;
+      this.fov = fov;*/
+  }
+
+  initScene() {
+    
+    this.scene = new THREE.Scene();
+    
+    this.camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 1, 1000);
+    this.camera.position.z = 50;
+
+    //this.controls = new THREE.TrackballControls( this.camera );
+    //this.controls.addEventListener('change', this.renderScene);
+
+    //specify a canvas which is already created in the HTML file and tagged by an id        //aliasing enabled
+    this.canvas = document.querySelector('canvas.webgl')
+    this.renderer = new THREE.WebGLRenderer({
+      canvas: this.canvas,
+      alpha: true
+    })    
+    this.renderer.setSize(innerWidth, innerHeight);
+    this.renderer.setPixelRatio(devicePixelRatio);
+    document.body.appendChild(this.renderer.domElement);
+
+    var orbit = new OrbitControls(this.camera, this.renderer.domElement)
+    let light = new THREE.DirectionalLight( 0xffffff , 1)
+    light.position.set(0, 0, 1)
+    this.scene.add(light);
+
+    this.mouse = new THREE.Vector2();
+    this.raycaster = new THREE.Raycaster();
+
+    this.initGrid()
 
   }
+
+  initGrid(){
+    var hCount = 10,
+    vCount = 10,
+    spacing = 1.5;
+    this.gui_grid = new THREE.Object3D(); 
+    for (var h=0; h<hCount; h+=1) {
+        for (var v=0; v<vCount; v+=1) {
+            var box_geometry = new THREE.BoxGeometry(1,1,1)
+            var box = new THREE.Mesh(box_geometry,
+                          new THREE.MeshBasicMaterial({ color: 0x0000ff, }));
+            box.position.x = (h-hCount/2) * spacing;
+            box.position.y = (v-vCount/2) * spacing;
+            this.gui_grid.add(box);
+        }
+    }
+    this.scene.add(this.gui_grid);
+    this.scene.updateMatrixWorld(); //this is to fix the issue where raycaster selected everything before I could do anything
+  }
+
+  animate(){
+    requestAnimationFrame( this.animate.bind(this) );
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    const intersects = this.raycaster.intersectObjects( this.gui_grid.children );
+    for ( let i = 0; i < intersects.length; i++ ) {
+  
+      intersects[ i ].object.material.color.set( 0xff0000 );
+      console.log(intersects[i].object)
+    }
+
+    this.render(this.scene, this.camera);
+    //this.controls.update();
+  }
+
+  render(){
+      this.renderer.render( this.scene, this.camera );
+  }
 }
+
+
 class Controller{
   constructor(model, view) {
     this.model = model;
@@ -76,18 +158,23 @@ class Controller{
 }
 
 const model = new Model(10, 10);
-const view = new View();
+const view = new View(45);
 const application = new Controller(model, view);
 
+view.initScene();
+view.animate();
 
+console.log(view.scene.children);
+
+
+addEventListener('click', () => {
+  view.mouse.x = (event.clientX / innerWidth) * 2 - 1
+  view.mouse.y = -(event.clientY / innerHeight) * 2 + 1
+
+  console.log(view.mouse)
+})
 
 /** 
-// Find the latest version by visiting https://cdn.skypack.dev/three.
-  
-import * as THREE from 'https://cdn.skypack.dev/three@0.126.1';
-import {OrbitControls} from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js';
-  
-import * as dat from 'dat.gui'
 
 //TODO: move next two functions in some utils file
 function componentToHex(c) {
@@ -100,22 +187,10 @@ function rgbToHex(r, g, b) {
 }
 
 
-const gui = new dat.GUI()
-const canvas = document.querySelector('canvas.webgl')
-
-const world = {
-  gui_grid: {
-    height: 20,
-    width: 20,
-    spacing: 1.5, 
-    color: 0x00ff00
-  },
-  world_representation: undefined,
-}
 
 
-world.world_representation = Array.from(Array(world.gui_grid.width), _ => Array(world.gui_grid.height).fill(0))
-console.log(world.world_representation)
+
+
 
 // the gui_grid world is represented by an integers matrix (world representation) of which dimensions are specified by the height and width attributes
 // the matrix contains boolean data (anche se in js 'boolean' vuol dire tutto e niente.. probabilmente boolean saranno simulati come integers) 
@@ -129,49 +204,20 @@ gui.add(world.gui_grid, 'color').onChange(() => { //FIXME:
 
 
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 1000)
 
 
 
-const renderer = new THREE.WebGLRenderer({
-  canvas: canvas,
-  alpha: true
-}
-)
+
+
 
 //console.log(scene)
 //console.log(camera)
 //console.log(renderer)
 
-renderer.setSize(innerWidth, innerHeight)
-renderer.setPixelRatio(devicePixelRatio) //could make rendering slower (?)
-document.body.appendChild(renderer.domElement)
 
-var orbit = new OrbitControls(camera, renderer.domElement)
-camera.position.z = 50
-const light = new THREE.DirectionalLight( 0xffffff , 1)
-light.position.set(0, 0, 1)
+
 //scene.add(light)
 
-var hCount = world.gui_grid.width,
-    vCount = world.gui_grid.height,
-    spacing = world.gui_grid.spacing;
-var gui_grid = new THREE.Object3D(); 
-for (var h=0; h<hCount; h+=1) {
-    for (var v=0; v<vCount; v+=1) {
-        var box_geometry = new THREE.BoxGeometry(1,1,1)
-        var box = new THREE.Mesh(box_geometry,
-                      new THREE.MeshBasicMaterial({ color: world.gui_grid.color, }));
-        box.position.x = (h-hCount/2) * spacing;
-        box.position.y = (v-vCount/2) * spacing;
-        gui_grid.add(box);
-    }
-}
-scene.add(gui_grid);
-
-const mouse = new THREE.Vector2();
-const raycaster = new THREE.Raycaster();
 
 
 //FIXME: click isn't good enough, serve qualche guardia.. altrimenti se si clicca e tiene premuto fa casino
@@ -181,29 +227,6 @@ addEventListener('click', () => {
 
   console.log(mouse)
 })
-
-//orbit.enabled = false; //to disable orbit control if in edit mode
-function animate(){
-  requestAnimationFrame(animate)
-  //renderer.render(scene, camera)
-  raycaster.setFromCamera( mouse, camera );
-  const intersects = raycaster.intersectObjects( gui_grid.children );
-  //console.log(gui_grid.children)
-
-	for ( let i = 0; i < intersects.length; i++ ) {
-
-		intersects[ i ].object.material.color.set( 0xff0000 );
-    //onsole.log(intersects[i])
-	}
-  //console.log(intersects);
-  //gui_grid.rotation.x += 0.001
-  
-	renderer.render( scene, camera );
-}
-
-
-animate()
-
-
-
 */
+//orbit.enabled = false; //to disable orbit control if in edit mode
+//function 
