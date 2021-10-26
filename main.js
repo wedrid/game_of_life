@@ -137,7 +137,7 @@ class View{
     for ( let i = 0; i < intersects.length; i++ ) {
   
       intersects[ i ].object.material.color.set( 0xff0000 );
-      console.log(intersects[i].object)
+      //console.log(intersects[i].object)
     }
 
     this.render(this.scene, this.camera);
