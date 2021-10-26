@@ -1,6 +1,87 @@
 //TODO: per fare l'interazione con l'utente => tramite raycaster!!
 
+//Here after, I try to improve my js.. the first trial was pretty bad code
+class Model{
+  constructor(width, height) {
+    //the gol-world will be represented as a 2x2 matrix of which states are 0 - dead or 1 - alive
+    this.width = width;
+    this.height = height;
+    this.world_model = Array.from(Array(this.width), _ => Array(this.height).fill(0)) //initialized as empty world
+  }
 
+  //for convention, the matrix is represented as (x,y)=(0,0) in the top left corner, increasing coordinates will
+  //go towards the left or downwards
+  //setAlive and setDead seem to work, however in the console it seems that if I print the array, it only shows the final states in all console outs
+  setAlive(x, y){ //aka give birth
+    if(x > this.width || y > this.height){
+      throw 'Tried to set alive an invalid coordinate';
+    }
+  
+    this.world_model[x][y] = 1;
+    //console.log(this.world_model);
+  }
+
+  setDead(x, y){ //aka kill
+    if(x > this.width || y > this.height){
+      throw 'Tried to set dead an invalid coordinate';
+    }
+    this.world_model[x][y] = 0;
+    //console.log(this.world_model);
+  }
+
+  calculateNextEpoch(){
+    //nextState <= newarray
+    const nextState = Array.from(Array(this.width), _ => Array(this.height).fill(0)); //hopefully js has some sort of garbage collection mechanism..
+    for(var i = 0; i < this.width; i++){
+      for(var j = 0; j < this.height; j++){
+        //if border, leave untouched.. quickfix for now...
+        if(i == 0 || i == this.height - 1 || j == 0 || j == this.width){
+          nextState[i][j] = this.world_model[i][j];
+        } else {
+          //else, if not on border, check g.o.l. rules..
+          //Necessary to count the number of neighbors
+          /*   Quick check..            i = 5, j = 5 //principio di induzione dell'ingegnere
+          [i-1][j-1] [i-1][j] [i-1][j+1]  --> 4,4  4,5  4,6
+          [i][j-1]   [i][j]   [i][j+1]        5,4  5,5  5,6
+          [i+1][j-1] [i+1][j] [i+1][j+1]      6,4  6,5  6,6
+          */ 
+          var numNeighbors = this.world_model[i-1][j-1] + this.world_model[i-1][j] + this.world_model[i-1][j+1] + this.world_model[i][j-1] + this.world_model[i][j+1] + this.world_model[i+1][j-1] + this.world_model[i+1][j] + this.world_model[i+1][j+1];
+          
+          if(this.world_model[i][j] == 1 && (numNeighbors == 3 || numNeighbors == 4)){
+            nextState[i][j] = 1;
+          } 
+          if(this.world_model[i][j] == 0 && numNeighbors == 3){
+            nextState[i][j] = 1;
+          }
+          //gli altri casi sono considerati dal fatto che la matrice è inizializzata a zero
+          }
+        }                               
+      }
+      this.world_model = nextState;
+      //console.log(nextState);
+    }
+  }
+
+
+class View{
+  constructor() {
+
+  }
+}
+class Controller{
+  constructor(model, view) {
+    this.model = model;
+    this.view = view;
+  }
+}
+
+const model = new Model(10, 10);
+const view = new View();
+const application = new Controller(model, view);
+
+
+
+/** 
 // Find the latest version by visiting https://cdn.skypack.dev/three.
   
 import * as THREE from 'https://cdn.skypack.dev/three@0.126.1';
@@ -125,3 +206,4 @@ animate()
 
 
 
+*/
