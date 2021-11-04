@@ -2,11 +2,13 @@
 //Some js initialization 
 // Find the latest version by visiting https://cdn.skypack.dev/three.
 import * as THREE from 'https://cdn.skypack.dev/three@0.126.1';
+//import { OrbitControls } from './orbit_controls.js';
 import {OrbitControls} from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'dat.gui';
 
 
 class Model{
+  //to make more efficient, it is probably a good idea, when calculating the dead and alive cells, to calculate the ones that changed status, instead of updating the whole graphical cells
   constructor(width, height) {
     //the gol-world will be represented as a 2x2 matrix of which states are 0 - dead or 1 - alive
     this.width = width;
@@ -54,9 +56,10 @@ class Model{
           
           if(this.world_model[i][j] == 1 && (numNeighbors == 3 || numNeighbors == 4)){
             nextState[i][j] = 1;
+            //TODO: if nextState[i,j] != worldModel[i,j] THEN => NOTIFY observers
           } 
           if(this.world_model[i][j] == 0 && numNeighbors == 3){
-            nextState[i][j] = 1;
+            nextState[i][j] = 1; //TODO: same as previous if statement
           }
           //gli altri casi sono considerati dal fatto che la matrice è inizializzata a zero
           }
@@ -69,8 +72,12 @@ class Model{
 
 
 class View{
-  constructor()
-  {
+  
+  constructor(width, height)
+  { 
+    this.height = height;
+    this.width = width;
+    this.idsMatrix = Array.from(Array(this.width), _ => Array(this.height).fill(0));
     /*
       this.camera = camera;
       this.scene = scene;
@@ -100,20 +107,34 @@ class View{
     document.body.appendChild(this.renderer.domElement);
 
     var orbit = new OrbitControls(this.camera, this.renderer.domElement)
+    //var orbit = new OrbitControls(this.camera, document.getElementById('canvas'))
     let light = new THREE.DirectionalLight( 0xffffff , 1)
     light.position.set(0, 0, 1)
     this.scene.add(light);
 
     this.mouse = new THREE.Vector2();
+    this.mouse.x = undefined;
+    this.mouse.y = undefined;
+
     this.raycaster = new THREE.Raycaster();
 
     this.initGrid()
 
   }
 
+  setCellAlive(i, j){ //per qualche ragione, la visualizzazione delle celle è "trasposta", in un certo senso.. ma non è un grosso problema
+    const cell = this.scene.getObjectById( this.idsMatrix[i][j], true );
+    cell.material.color.set( 0xff0000 );
+  }
+  
+  setCellDead(i, j){
+    const cell = this.scene.getObjectById( this.idsMatrix[i][j], true );
+    cell.material.color.set( 0x000000 );
+  }
+
   initGrid(){
-    var hCount = 10,
-    vCount = 10,
+    var hCount = this.height,
+    vCount = this.width,
     spacing = 1.5;
     this.gui_grid = new THREE.Object3D(); 
     for (var h=0; h<hCount; h+=1) {
@@ -121,22 +142,29 @@ class View{
             var box_geometry = new THREE.BoxGeometry(1,1,1)
             var box = new THREE.Mesh(box_geometry,
                           new THREE.MeshBasicMaterial({ color: 0x0000ff, }));
+            
             box.position.x = (h-hCount/2) * spacing;
             box.position.y = (v-vCount/2) * spacing;
             this.gui_grid.add(box);
+            this.idsMatrix[h][v] = box.id; 
         }
     }
+    console.log(this.idsMatrix);
     this.scene.add(this.gui_grid);
     this.scene.updateMatrixWorld(); //this is to fix the issue where raycaster selected everything before I could do anything
+    this.setCellAlive(2,2);
+    this.setCellDead(10,10);
   }
+
+  
 
   animate(){
     requestAnimationFrame( this.animate.bind(this) );
     this.raycaster.setFromCamera(this.mouse, this.camera);
     const intersects = this.raycaster.intersectObjects( this.gui_grid.children );
     for ( let i = 0; i < intersects.length; i++ ) {
-  
-      intersects[ i ].object.material.color.set( 0xff0000 );
+      //console.log(intersects[i].object)
+      intersects[ i ].object.material.color.set( 0x00ff00 );
       //console.log(intersects[i].object)
     }
 
@@ -151,27 +179,54 @@ class View{
 
 
 class Controller{
+  
   constructor(model, view) {
     this.model = model;
     this.view = view;
+    //this.dat_gui = new dat.GUI();
+    this.configureDatGui();
   }
+
+  configureDatGui(){
+    this.dat_gui = new dat.GUI({ autoPlace: false });
+
+    var customContainer = document.getElementById('my-gui-container');
+    customContainer.appendChild(this.dat_gui.domElement);
+
+    this.gui_controls = {
+      func: function() { 
+            console.log(this.range);
+        },
+    };
+    
+    this.dat_gui.add(this.gui_controls, "func");
+    this.dat_gui.open();
+  }
+  
 }
 
 const model = new Model(10, 10);
-const view = new View(45);
+const view = new View(20,20);
 const application = new Controller(model, view);
 
 view.initScene();
 view.animate();
 
-console.log(view.scene.children);
+//console.log(view.scene.children);
 
+
+/*(function myLoop(i) {
+  setTimeout(function() {
+    console.log('Pippo'); //  your code here                
+    //if (--i) myLoop(i);   //  decrement i and call myLoop again if i > 0
+    if (true) myLoop(i);
+  }, 1000)
+})(10); */
 
 addEventListener('click', () => {
   view.mouse.x = (event.clientX / innerWidth) * 2 - 1
   view.mouse.y = -(event.clientY / innerHeight) * 2 + 1
-
-  console.log(view.mouse)
+  //console.log(view.mouse)
 })
 
 /** 

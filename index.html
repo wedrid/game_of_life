@@ -17,10 +17,18 @@
             left: 0;
             outline: none;
         }
+        #my-gui-container{
+            position: absolute; 
+            top: 0; 
+            right: 0;
+            z-index: 100;
+        }
+
     </style>
   </head>
   <body>
     <div id="app"></div>
+    <div id="my-gui-container"></div>
     <canvas class="webgl"></canvas>
     <script type="module" src="/main.js"></script>
   </body>
