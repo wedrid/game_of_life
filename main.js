@@ -2,47 +2,88 @@
 //Some js initialization 
 // Find the latest version by visiting https://cdn.skypack.dev/three.
 import * as THREE from 'https://cdn.skypack.dev/three@0.126.1';
-//import { OrbitControls } from './orbit_controls.js';
+import { gsap } from 'gsap';
 import {OrbitControls} from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'dat.gui';
 
 
 class Model{
   //to make more efficient, it is probably a good idea, when calculating the dead and alive cells, to calculate the ones that changed status, instead of updating the whole graphical cells
-  constructor(width, height) {
+  constructor(rows, cols, epoch_time) {
     //the gol-world will be represented as a 2x2 matrix of which states are 0 - dead or 1 - alive
-    this.width = width;
-    this.height = height;
-    this.world_model = Array.from(Array(this.width), _ => Array(this.height).fill(0)) //initialized as empty world
+    this.epoch_time = epoch_time
+    this.rows = rows; //aka num of columns //width is now rows
+    this.cols = cols; //aka num of rows //height is now cols
+    //this.world_model = Array.from(Array(this.height), _ => Array(this.width).fill(0)); //initialized as empty world
+    this.world_model = Array(rows).fill().map(() => Array(cols).fill(0));
+    
+    console.log(this.world_model);
+    
+    this.editMode = false;
+    this.observers = [];
+  }
+
+  notifyObservers(){
+    for(let i = 0; i < this.observers.length; i++){
+      //console.log(this.observers[i]);
+      this.observers[i].notify(this.world_model); //TODO: pull, push? etc. 
+    }
+  }
+
+  subscribe(view){
+    this.observers.push(view); //forse un po' overkill, ma solo perchè c'è una sola view
+    //console.log(this.observers.length);
+  }
+
+  startEditMode(){
+    this.editMode = true;
+  }
+
+  stopEditMode(){
+    this.editMode = false;
   }
 
   //for convention, the matrix is represented as (x,y)=(0,0) in the top left corner, increasing coordinates will
   //go towards the left or downwards
   //setAlive and setDead seem to work, however in the console it seems that if I print the array, it only shows the final states in all console outs
-  setAlive(x, y){ //aka give birth
-    if(x > this.width || y > this.height){
+  setAlive(i, j){ //aka give birth
+    if(i >= this.rows || j >= this.cols){
       throw 'Tried to set alive an invalid coordinate';
     }
   
-    this.world_model[x][y] = 1;
+    this.world_model[i][j] = 1;
+    //console.log(this.world_model);
+    this.notifyObservers();
+  }
+
+  setDead(i, j){ //aka kill
+    if(i >= this.rows || j >= this.cols){
+      throw 'Tried to set dead an invalid coordinate';
+    }
+    this.world_model[i][j] = 0;
     //console.log(this.world_model);
   }
 
-  setDead(x, y){ //aka kill
-    if(x > this.width || y > this.height){
-      throw 'Tried to set dead an invalid coordinate';
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async startProgressLoop(){
+    while(true){
+      if(!this.editMode){
+        this.calculateNextEpoch();
+      }
+      await this.sleep(this.epoch_time);
     }
-    this.world_model[x][y] = 0;
-    //console.log(this.world_model);
   }
 
   calculateNextEpoch(){
     //nextState <= newarray
-    const nextState = Array.from(Array(this.width), _ => Array(this.height).fill(0)); //hopefully js has some sort of garbage collection mechanism..
-    for(var i = 0; i < this.width; i++){
-      for(var j = 0; j < this.height; j++){
+    const nextState = Array(this.rows).fill().map(() => Array(this.cols).fill(0)); //hopefully js has some sort of garbage collection mechanism..
+    for(var i = 0; i < this.rows; i++){ //height = rows
+      for(var j = 0; j < this.cols; j++){ //width = cols
         //if border, leave untouched.. quickfix for now...
-        if(i == 0 || i == this.height - 1 || j == 0 || j == this.width){
+        if(i == 0 || i == this.rows - 1 || j == 0 || j == this.cols){
           nextState[i][j] = this.world_model[i][j];
         } else {
           //else, if not on border, check g.o.l. rules..
@@ -52,9 +93,12 @@ class Model{
           [i][j-1]   [i][j]   [i][j+1]        5,4  5,5  5,6
           [i+1][j-1] [i+1][j] [i+1][j+1]      6,4  6,5  6,6
           */ 
+          //console.log(this.world_model);
           var numNeighbors = this.world_model[i-1][j-1] + this.world_model[i-1][j] + this.world_model[i-1][j+1] + this.world_model[i][j-1] + this.world_model[i][j+1] + this.world_model[i+1][j-1] + this.world_model[i+1][j] + this.world_model[i+1][j+1];
+          console.log(numNeighbors);
           
-          if(this.world_model[i][j] == 1 && (numNeighbors == 3 || numNeighbors == 4)){
+          if(this.world_model[i][j] == 1 && (numNeighbors == 2 || numNeighbors == 3)){
+            console.log("")
             nextState[i][j] = 1;
             //TODO: if nextState[i,j] != worldModel[i,j] THEN => NOTIFY observers
           } 
@@ -66,24 +110,43 @@ class Model{
         }                               
       }
       this.world_model = nextState;
-      //console.log(nextState);
-    }
+      console.log(nextState);
+      this.notifyObservers(); 
   }
+}
 
 
 class View{
   
-  constructor(width, height)
+  constructor(rows, cols)
   { 
-    this.height = height;
-    this.width = width;
-    this.idsMatrix = Array.from(Array(this.width), _ => Array(this.height).fill(0));
+    //this.height = height;
+    //this.width = width;
+    this.rows = rows;
+    this.cols = cols;
+    this.idsMatrix = Array(rows).fill().map(() => Array(cols).fill(0));
+    console.log(this.idsMatrix);
     /*
       this.camera = camera;
       this.scene = scene;
       this.controls = controls;
       this.renderer = renderer;
       this.fov = fov;*/
+  }
+
+  notify(newState){
+    //console.log(newState);
+    for( let i = 0; i < this.height; i++){
+      for(let j = 0; j < this.width; j++){
+        //console.log(newState[i][j]);
+        if(newState[i][j] == 1){
+          this.setCellAlive(i,j);
+        }
+        else{
+          //this.setCellDead(i,j);
+        }
+      }
+    }
   }
 
   initScene() {
@@ -124,21 +187,21 @@ class View{
 
   setCellAlive(i, j){ //per qualche ragione, la visualizzazione delle celle è "trasposta", in un certo senso.. ma non è un grosso problema
     const cell = this.scene.getObjectById( this.idsMatrix[i][j], true );
-    cell.material.color.set( 0xff0000 );
+    cell.material.color.set( 0x00ff00 );
   }
   
   setCellDead(i, j){
     const cell = this.scene.getObjectById( this.idsMatrix[i][j], true );
-    cell.material.color.set( 0x000000 );
+    cell.material.color.set( 0xff0000 );
   }
 
   initGrid(){
-    var hCount = this.height,
-    vCount = this.width,
+    var hCount = this.cols,
+    vCount = this.rows,
     spacing = 1.5;
     this.gui_grid = new THREE.Object3D(); 
-    for (var h=0; h<hCount; h+=1) {
-        for (var v=0; v<vCount; v+=1) {
+    for (var h=0; h<vCount; h+=1) {
+        for (var v=0; v<hCount; v+=1) {
             var box_geometry = new THREE.BoxGeometry(1,1,1)
             var box = new THREE.Mesh(box_geometry,
                           new THREE.MeshBasicMaterial({ color: 0x0000ff, }));
@@ -149,11 +212,11 @@ class View{
             this.idsMatrix[h][v] = box.id; 
         }
     }
-    console.log(this.idsMatrix);
+    //console.log(this.idsMatrix);
     this.scene.add(this.gui_grid);
     this.scene.updateMatrixWorld(); //this is to fix the issue where raycaster selected everything before I could do anything
-    this.setCellAlive(2,2);
-    this.setCellDead(10,10);
+    //this.setCellAlive(2,2);
+    //this.setCellDead(10,15);
   }
 
   
@@ -165,6 +228,11 @@ class View{
     for ( let i = 0; i < intersects.length; i++ ) {
       //console.log(intersects[i].object)
       intersects[ i ].object.material.color.set( 0x00ff00 );
+      gsap.to( intersects[ i ].object.position, {
+        duration: 0.5,
+        z: 1
+      } );
+
       //console.log(intersects[i].object)
     }
 
@@ -181,6 +249,7 @@ class View{
 class Controller{
   
   constructor(model, view) {
+    model.subscribe(view);
     this.model = model;
     this.view = view;
     //this.dat_gui = new dat.GUI();
@@ -193,21 +262,37 @@ class Controller{
     var customContainer = document.getElementById('my-gui-container');
     customContainer.appendChild(this.dat_gui.domElement);
 
+    //TODO: we need to do some wiring
     this.gui_controls = {
-      func: function() { 
-            console.log(this.range);
+      Start: function() { 
+            console.log("PIPPO");
         },
+      Pause: function() {}, 
+      Clear: function() {},
+      Edit: false,
+
     };
     
-    this.dat_gui.add(this.gui_controls, "func");
+    this.dat_gui.add(this.gui_controls, "Start");
+    this.dat_gui.add(this.gui_controls, "Pause");
+    this.dat_gui.add(this.gui_controls, "Clear");
+    this.dat_gui.add(this.gui_controls, "Edit");
     this.dat_gui.open();
   }
   
 }
 
-const model = new Model(10, 10);
-const view = new View(20,20);
+const model = new Model(5, 10, 1000);
+
+const view = new View(5, 10);
 const application = new Controller(model, view);
+//model.startProgressLoop();
+
+model.setAlive(2,3);
+model.setAlive(2,4);
+model.setAlive(2,5);
+
+model.calculateNextEpoch();
 
 view.initScene();
 view.animate();
