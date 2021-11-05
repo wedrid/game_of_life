@@ -25,7 +25,8 @@ class Model{
 
   notifyObservers(){
     for(let i = 0; i < this.observers.length; i++){
-      //console.log(this.observers[i]);
+      console.log("HI")
+      console.log(this.world_model);
       this.observers[i].notify(this.world_model); //TODO: pull, push? etc. 
     }
   }
@@ -53,7 +54,7 @@ class Model{
   
     this.world_model[i][j] = 1;
     //console.log(this.world_model);
-    this.notifyObservers();
+    //this.notifyObservers();
   }
 
   setDead(i, j){ //aka kill
@@ -79,7 +80,7 @@ class Model{
 
   calculateNextEpoch(){
     //nextState <= newarray
-    const nextState = Array(this.rows).fill().map(() => Array(this.cols).fill(0)); //hopefully js has some sort of garbage collection mechanism..
+    var nextState = Array(this.rows).fill().map(() => Array(this.cols).fill(0)); //hopefully js has some sort of garbage collection mechanism..
     for(var i = 0; i < this.rows; i++){ //height = rows
       for(var j = 0; j < this.cols; j++){ //width = cols
         //if border, leave untouched.. quickfix for now...
@@ -95,10 +96,10 @@ class Model{
           */ 
           //console.log(this.world_model);
           var numNeighbors = this.world_model[i-1][j-1] + this.world_model[i-1][j] + this.world_model[i-1][j+1] + this.world_model[i][j-1] + this.world_model[i][j+1] + this.world_model[i+1][j-1] + this.world_model[i+1][j] + this.world_model[i+1][j+1];
-          console.log(numNeighbors);
+          //console.log(numNeighbors);
           
           if(this.world_model[i][j] == 1 && (numNeighbors == 2 || numNeighbors == 3)){
-            console.log("")
+            //console.log("")
             nextState[i][j] = 1;
             //TODO: if nextState[i,j] != worldModel[i,j] THEN => NOTIFY observers
           } 
@@ -109,7 +110,9 @@ class Model{
           }
         }                               
       }
+      
       this.world_model = nextState;
+      
       console.log(nextState);
       this.notifyObservers(); 
   }
@@ -126,6 +129,7 @@ class View{
     this.cols = cols;
     this.idsMatrix = Array(rows).fill().map(() => Array(cols).fill(0));
     console.log(this.idsMatrix);
+    this.initScene();
     /*
       this.camera = camera;
       this.scene = scene;
@@ -135,15 +139,16 @@ class View{
   }
 
   notify(newState){
-    //console.log(newState);
-    for( let i = 0; i < this.height; i++){
-      for(let j = 0; j < this.width; j++){
-        //console.log(newState[i][j]);
+    console.log("HELLO")
+    console.log(newState);
+    for( let i = 0; i < this.rows; i++){
+      for( let j = 0; j < this.cols; j++){
+        console.log(newState[i][j]);
         if(newState[i][j] == 1){
           this.setCellAlive(i,j);
         }
         else{
-          //this.setCellDead(i,j);
+          this.setCellDead(i,j);
         }
       }
     }
@@ -186,13 +191,22 @@ class View{
   }
 
   setCellAlive(i, j){ //per qualche ragione, la visualizzazione delle celle è "trasposta", in un certo senso.. ma non è un grosso problema
+    
     const cell = this.scene.getObjectById( this.idsMatrix[i][j], true );
+    gsap.to( cell.position, {
+      duration: 1,
+      z: 1
+    } );
     cell.material.color.set( 0x00ff00 );
   }
   
   setCellDead(i, j){
     const cell = this.scene.getObjectById( this.idsMatrix[i][j], true );
-    cell.material.color.set( 0xff0000 );
+    gsap.to( cell.position, {
+      duration: 1,
+      z: 0
+    } );
+    cell.material.color.set( 0x0000ff );
   }
 
   initGrid(){
@@ -228,10 +242,7 @@ class View{
     for ( let i = 0; i < intersects.length; i++ ) {
       //console.log(intersects[i].object)
       intersects[ i ].object.material.color.set( 0x00ff00 );
-      gsap.to( intersects[ i ].object.position, {
-        duration: 0.5,
-        z: 1
-      } );
+      
 
       //console.log(intersects[i].object)
     }
@@ -282,19 +293,18 @@ class Controller{
   
 }
 
-const model = new Model(5, 10, 1000);
 
-const view = new View(5, 10);
+const view = new View(20, 20);
+const model = new Model(20, 20, 1000);
 const application = new Controller(model, view);
-//model.startProgressLoop();
+
 
 model.setAlive(2,3);
 model.setAlive(2,4);
 model.setAlive(2,5);
 
-model.calculateNextEpoch();
-
-view.initScene();
+model.startProgressLoop();
+//view.initScene();
 view.animate();
 
 //console.log(view.scene.children);
