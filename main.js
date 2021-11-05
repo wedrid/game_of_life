@@ -6,6 +6,7 @@ import { gsap } from 'gsap';
 import {OrbitControls} from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'dat.gui';
 
+let global_pause_controller = false; //FIXME: hacky....
 
 class Model{
   //to make more efficient, it is probably a good idea, when calculating the dead and alive cells, to calculate the ones that changed status, instead of updating the whole graphical cells
@@ -19,14 +20,15 @@ class Model{
     
     console.log(this.world_model);
     
-    this.editMode = false;
+    this.pause = false;
     this.observers = [];
+    this.temp = 1;
   }
 
   notifyObservers(){
     for(let i = 0; i < this.observers.length; i++){
       console.log("HI")
-      console.log(this.world_model);
+      //console.log(this.world_model);
       this.observers[i].notify(this.world_model); //TODO: pull, push? etc. 
     }
   }
@@ -36,17 +38,27 @@ class Model{
     //console.log(this.observers.length);
   }
 
-  startEditMode(){
-    this.editMode = true;
+  pauseTrigger(){
+    console.log("TRYING TO PAUSE");
+    global_pause_controller = true;
+    //this.pause = true;
+    console.log(this.pause)
   }
 
-  stopEditMode(){
-    this.editMode = false;
+  playTrigger(){
+    global_pause_controller = false;
+    //this.startProgressLoop();
+    //console.log("OUT");
+    //console.log(this.temp);
+  }
+
+  checkPause(){
+    return this.pause;
   }
 
   //for convention, the matrix is represented as (x,y)=(0,0) in the top left corner, increasing coordinates will
   //go towards the left or downwards
-  //setAlive and setDead seem to work, however in the console it seems that if I print the array, it only shows the final states in all console outs
+  //setAlive and setDead seems to work, however in the console it seems that if I print the array, it only shows the final states in all console outs
   setAlive(i, j){ //aka give birth
     if(i >= this.rows || j >= this.cols){
       throw 'Tried to set alive an invalid coordinate';
@@ -66,17 +78,29 @@ class Model{
   }
 
   sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    //return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve, reject) => {
+      setTimeout(resolve, ms);
+      //resolve();
+    });
   }
 
+  
   async startProgressLoop(){
+    global_pause_controller = false;
+    //this.pause = true;
     while(true){
-      if(!this.editMode){
+        if(!global_pause_controller){
+        console.log(this.pause);
         this.calculateNextEpoch();
-      }
+        this.temp += 1;
+        console.log(this.temp);
+        }
       await this.sleep(this.epoch_time);
     }
   }
+
+  
 
   calculateNextEpoch(){
     //nextState <= newarray
@@ -113,7 +137,7 @@ class Model{
       
       this.world_model = nextState;
       
-      console.log(nextState);
+      //console.log(nextState);
       this.notifyObservers(); 
   }
 }
@@ -140,10 +164,10 @@ class View{
 
   notify(newState){
     console.log("HELLO")
-    console.log(newState);
+    //console.log(newState);
     for( let i = 0; i < this.rows; i++){
       for( let j = 0; j < this.cols; j++){
-        console.log(newState[i][j]);
+        //console.log(newState[i][j]);
         if(newState[i][j] == 1){
           this.setCellAlive(i,j);
         }
@@ -174,7 +198,8 @@ class View{
     this.renderer.setPixelRatio(devicePixelRatio);
     document.body.appendChild(this.renderer.domElement);
 
-    var orbit = new OrbitControls(this.camera, this.renderer.domElement)
+    this.orbit = new OrbitControls(this.camera, this.renderer.domElement)
+    //this.orbit.enabled = true
     //var orbit = new OrbitControls(this.camera, document.getElementById('canvas'))
     let light = new THREE.DirectionalLight( 0xffffff , 1)
     light.position.set(0, 0, 1)
@@ -188,6 +213,15 @@ class View{
 
     this.initGrid()
 
+  }
+
+  enableEditMode(){
+    console.log("Enabled editing mode!");
+    this.orbit.enabled = false;
+  }
+  
+  disableEditMode(){
+    this.orbit.enabled = true;
   }
 
   setCellAlive(i, j){ //per qualche ragione, la visualizzazione delle celle è "trasposta", in un certo senso.. ma non è un grosso problema
@@ -275,19 +309,22 @@ class Controller{
 
     //TODO: we need to do some wiring
     this.gui_controls = {
-      Start: function() { 
-            console.log("PIPPO");
-        },
-      Pause: function() {}, 
+      Play: this.model.playTrigger,
+      Pause: this.model.pauseTrigger, 
       Clear: function() {},
       Edit: false,
-
     };
     
-    this.dat_gui.add(this.gui_controls, "Start");
+    this.dat_gui.add(this.gui_controls, "Play");
     this.dat_gui.add(this.gui_controls, "Pause");
     this.dat_gui.add(this.gui_controls, "Clear");
-    this.dat_gui.add(this.gui_controls, "Edit");
+    this.dat_gui.add(this.gui_controls, "Edit").onChange((value) => {
+      if(value){
+        this.view.enableEditMode();
+      } else {
+        this.view.disableEditMode();
+      }
+    });
     this.dat_gui.open();
   }
   
