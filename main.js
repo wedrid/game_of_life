@@ -22,7 +22,7 @@ class Model{
     
     this.pause = false;
     this.observers = [];
-    this.temp = 1;
+    //this.temp = 1;
   }
 
   notifyObservers(){
@@ -88,12 +88,12 @@ class Model{
   
   async startProgressLoop(){
     global_pause_controller = false;
-    //this.pause = true;
+    //this.pause = true; //FIXME: could the problem be a binding issue? this doesn't, after the first call..
     while(true){
         if(!global_pause_controller){
         console.log(this.pause);
         this.calculateNextEpoch();
-        this.temp += 1;
+        //this.temp += 1;
         console.log(this.temp);
         }
       await this.sleep(this.epoch_time);
@@ -145,21 +145,30 @@ class Model{
 
 class View{
   
-  constructor(rows, cols)
+  constructor(rows, cols, controller)
   { 
     //this.height = height;
     //this.width = width;
+    //this.controller = controller;
     this.rows = rows;
     this.cols = cols;
     this.idsMatrix = Array(rows).fill().map(() => Array(cols).fill(0));
     console.log(this.idsMatrix);
     this.initScene();
-    /*
-      this.camera = camera;
-      this.scene = scene;
-      this.controls = controls;
-      this.renderer = renderer;
-      this.fov = fov;*/
+    this.editing = false;
+
+
+    document.addEventListener('mousedown', () => {
+      view.mouse.x = (event.clientX / innerWidth) * 2 - 1
+      view.mouse.y = -(event.clientY / innerHeight) * 2 + 1
+      //console.log(view.mouse)
+    })
+
+    
+  }
+
+  setController(controller){
+    this.controller = controller;
   }
 
   notify(newState){
@@ -216,12 +225,43 @@ class View{
   }
 
   enableEditMode(){
+    this.mouse.x = undefined
+    this.mouse.y = undefined
+    
     console.log("Enabled editing mode!");
+    this.editing = true;
     this.orbit.enabled = false;
   }
   
   disableEditMode(){
+
+    this.editing = false;
     this.orbit.enabled = true;
+  }
+
+  cellCoordinate(object_id){
+    let index = -1;
+    let i = 0;
+    const coords = [-1, -1];
+    for(i = 0; i < this.idsMatrix.length; i++){
+      const arr = this.idsMatrix[i];
+      index = arr.indexOf(object_id);
+      console.log(index)
+      if(index >= 0){
+        coords[0] = i;
+        coords[1] = index;
+        console.log(coords);
+      }
+    }
+
+    return coords;
+  }
+
+  editModel(object_id){
+    //calls the controller, which accepts the user input
+    //this methods simply reverse searches coordinates, given object id
+    const coords = this.cellCoordinate(object_id)
+    //this.controller.updateModel(coords[0], coords[1]); //TODO: last thing done, dev'essere implementato il controller
   }
 
   setCellAlive(i, j){ //per qualche ragione, la visualizzazione delle celle è "trasposta", in un certo senso.. ma non è un grosso problema
@@ -275,10 +315,13 @@ class View{
     const intersects = this.raycaster.intersectObjects( this.gui_grid.children );
     for ( let i = 0; i < intersects.length; i++ ) {
       //console.log(intersects[i].object)
-      intersects[ i ].object.material.color.set( 0x00ff00 );
+      if(this.editing){
+        //intersects[ i ].object.material.color.set( 0x00ff00 );
+        this.editModel(intersects[ i ].object.id); //questa funzione farà il seguente: ricerca le coordinate di questo elemento, controlla se è alive o dead e inverte lo stato
+        this.mouse.x = undefined; //altrimenti spara id a razzo
+        this.mouse.y = undefined;
+      }
       
-
-      //console.log(intersects[i].object)
     }
 
     this.render(this.scene, this.camera);
@@ -288,6 +331,7 @@ class View{
   render(){
       this.renderer.render( this.scene, this.camera );
   }
+  
 }
 
 
@@ -334,6 +378,7 @@ class Controller{
 const view = new View(20, 20);
 const model = new Model(20, 20, 1000);
 const application = new Controller(model, view);
+view.setController(application); //FIXME: there's a much better way but im tired right now REFACTOR
 
 
 model.setAlive(2,3);
@@ -347,19 +392,7 @@ view.animate();
 //console.log(view.scene.children);
 
 
-/*(function myLoop(i) {
-  setTimeout(function() {
-    console.log('Pippo'); //  your code here                
-    //if (--i) myLoop(i);   //  decrement i and call myLoop again if i > 0
-    if (true) myLoop(i);
-  }, 1000)
-})(10); */
 
-addEventListener('click', () => {
-  view.mouse.x = (event.clientX / innerWidth) * 2 - 1
-  view.mouse.y = -(event.clientY / innerHeight) * 2 + 1
-  //console.log(view.mouse)
-})
 
 /** 
 
