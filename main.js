@@ -6,7 +6,8 @@ import { gsap } from 'gsap';
 import {OrbitControls} from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'dat.gui';
 
-let global_pause_controller = false; //FIXME: hacky....
+//TODO: wire clear button and speed controller
+
 
 class Model{
   //to make more efficient, it is probably a good idea, when calculating the dead and alive cells, to calculate the ones that changed status, instead of updating the whole graphical cells
@@ -25,6 +26,12 @@ class Model{
     //this.temp = 1;
   }
 
+  setEpochTime(epochTime){
+    this.epoch_time = epochTime;
+  }
+
+  
+
   notifyObservers(){
     for(let i = 0; i < this.observers.length; i++){
       console.log("HI")
@@ -38,15 +45,28 @@ class Model{
     //console.log(this.observers.length);
   }
 
+  clearModel(){
+    console.log("CLEARING");
+    console.log(this.world_model);
+    for(let i = 0; i < this.rows; i++){
+      for(let j = 0; j < this.cols; j++){
+        this.world_model[i][j] = 0;
+      }
+    }
+    console.log(this.world_model);
+    //this.notifyObservers();
+  }
+
   pauseTrigger(){
     console.log("TRYING TO PAUSE");
-    global_pause_controller = true;
-    //this.pause = true;
+    //global_pause_controller = true;
+    this.pause = true;
     console.log(this.pause)
   }
 
   playTrigger(){
-    global_pause_controller = false;
+    //global_pause_controller = false;
+    this.pause = false;
     //this.startProgressLoop();
     //console.log("OUT");
     //console.log(this.temp);
@@ -77,6 +97,18 @@ class Model{
     //console.log(this.world_model);
   }
 
+  changeState(i,j){
+    if(i >= this.rows || j >= this.cols){
+      throw 'Tried to set dead an invalid coordinate';
+    }
+    if(this.world_model[i][j] == 0){
+      this.setAlive(i,j);
+    } else {
+      this.setDead(i,j);
+    }
+    this.notifyObservers();
+  }
+
   sleep(ms) {
     //return new Promise(resolve => setTimeout(resolve, ms));
     return new Promise((resolve, reject) => {
@@ -90,7 +122,8 @@ class Model{
     global_pause_controller = false;
     //this.pause = true; //FIXME: could the problem be a binding issue? this doesn't, after the first call..
     while(true){
-        if(!global_pause_controller){
+        //if(!global_pause_controller){
+        if(!this.pause){
         console.log(this.pause);
         this.calculateNextEpoch();
         //this.temp += 1;
@@ -192,7 +225,7 @@ class View{
     this.scene = new THREE.Scene();
     
     this.camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 1, 1000);
-    this.camera.position.z = 50;
+    this.camera.position.z = 27;
 
     //this.controls = new THREE.TrackballControls( this.camera );
     //this.controls.addEventListener('change', this.renderScene);
@@ -261,26 +294,81 @@ class View{
     //calls the controller, which accepts the user input
     //this methods simply reverse searches coordinates, given object id
     const coords = this.cellCoordinate(object_id)
-    //this.controller.updateModel(coords[0], coords[1]); //TODO: last thing done, dev'essere implementato il controller
+    this.controller.updateModel(coords[0], coords[1]); //TODO: last thing done, dev'essere implementato il controller
   }
 
   setCellAlive(i, j){ //per qualche ragione, la visualizzazione delle celle è "trasposta", in un certo senso.. ma non è un grosso problema
     
     const cell = this.scene.getObjectById( this.idsMatrix[i][j], true );
-    gsap.to( cell.position, {
-      duration: 1,
-      z: 1
+    /*gsap.to( cell.position, {
+      duration: 0.5,
+      z: 2
     } );
-    cell.material.color.set( 0x00ff00 );
+    gsap.to( cell.material.color, {
+      duration: 0.5,
+      r: 0,
+      g: 255,
+      b: 0
+    } );*/
+
+
+    var target = cell;
+    var initial = new THREE.Color(cell.material.color.getHex());
+    var value = new THREE.Color(0x00ff00);
+
+    gsap.timeline()
+      .to( cell.position, {
+        duration: 0.5,
+        z: 2, 
+        ease: "expo"
+      } ).to(initial, {     //This syntax is relevant to GSAP's TweenLite, I'll provide a link to the docs
+          duration: 0.5,
+          r: value.r,
+          g: value.g,
+          b: value.b,
+          ease: "expo",
+          onUpdate: function() { target.material.color = initial; },
+          
+      },
+      "<");
+
+      /*.to( cell.material.color, { //FIXME: can't figure out the color transition :(
+        duration: 0.5,
+        r: 0,
+        g: 255,
+        b: 0, 
+        a: 0,
+        ease:"sine",
+      }, "<" );*/
+    //cell.material.color.r = 250;
+    //cell.material.color.g = 0;
+    //cell.material.color.b = 0;
+    //cell.material.color.set( 0x00ff00 );
   }
   
   setCellDead(i, j){
     const cell = this.scene.getObjectById( this.idsMatrix[i][j], true );
-    gsap.to( cell.position, {
-      duration: 1,
-      z: 0
-    } );
-    cell.material.color.set( 0x0000ff );
+    var target = cell;
+    var initial = new THREE.Color(cell.material.color.getHex());
+    var value = new THREE.Color(0x0000ff);
+
+    gsap.timeline()
+      .to( cell.position, {
+        duration: 0.5,
+        z: 0, 
+        ease: "expo"
+      } ).to(initial, {     //This syntax is relevant to GSAP's TweenLite, I'll provide a link to the docs
+          duration: 0.5,
+          r: value.r,
+          g: value.g,
+          b: value.b,
+          ease: "expo",
+          onUpdate: function() { target.material.color = initial; },
+          
+      },
+      "<");
+
+    
   }
 
   initGrid(){
@@ -345,18 +433,25 @@ class Controller{
     this.configureDatGui();
   }
 
+  updateModel(i, j){
+    this.model.changeState(i,j);
+  }
+
   configureDatGui(){
     this.dat_gui = new dat.GUI({ autoPlace: false });
 
     var customContainer = document.getElementById('my-gui-container');
     customContainer.appendChild(this.dat_gui.domElement);
 
-    //TODO: we need to do some wiring
     this.gui_controls = {
-      Play: this.model.playTrigger,
-      Pause: this.model.pauseTrigger, 
-      Clear: function() {},
+      //Play: this.model.playTrigger,
+      //Pause: this.model.pauseTrigger, 
+      Play: () => { this.model.playTrigger() },
+      Pause: () => { this.model.pauseTrigger() },
+      Clear: () => { this.model.clearModel() },
       Edit: false,
+      Epoch_time: this.model.epoch_time,
+
     };
     
     this.dat_gui.add(this.gui_controls, "Play");
@@ -369,14 +464,17 @@ class Controller{
         this.view.disableEditMode();
       }
     });
+    this.dat_gui.add(this.gui_controls, "Epoch_time").onChange((newTime) => {
+      this.model.setEpochTime(newTime);
+    }).name("Epoch time");
     this.dat_gui.open();
   }
   
 }
 
 
-const view = new View(20, 20);
-const model = new Model(20, 20, 1000);
+const view = new View(60, 60);
+const model = new Model(60, 60, 1000);
 const application = new Controller(model, view);
 view.setController(application); //FIXME: there's a much better way but im tired right now REFACTOR
 
@@ -384,6 +482,14 @@ view.setController(application); //FIXME: there's a much better way but im tired
 model.setAlive(2,3);
 model.setAlive(2,4);
 model.setAlive(2,5);
+model.setAlive(3,3);
+model.setAlive(3,4);
+model.setAlive(3,5);
+model.setAlive(3,6);
+model.setAlive(6,4);
+model.setAlive(6,5);
+model.setAlive(7,5);
+model.setAlive(7,6);
 
 model.startProgressLoop();
 //view.initScene();
