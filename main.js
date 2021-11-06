@@ -6,8 +6,6 @@ import { gsap } from 'gsap';
 import {OrbitControls} from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'dat.gui';
 
-//TODO: wire clear button and speed controller
-
 
 class Model{
   //to make more efficient, it is probably a good idea, when calculating the dead and alive cells, to calculate the ones that changed status, instead of updating the whole graphical cells
@@ -19,7 +17,7 @@ class Model{
     //this.world_model = Array.from(Array(this.height), _ => Array(this.width).fill(0)); //initialized as empty world
     this.world_model = Array(rows).fill().map(() => Array(cols).fill(0));
     
-    console.log(this.world_model);
+    //console.log(this.world_model);
     
     this.pause = false;
     this.observers = [];
@@ -30,11 +28,24 @@ class Model{
     this.epoch_time = epochTime;
   }
 
-  
+  randomConfiguration(){
+    //console.log(this.world_model);
+    for(let i = 0; i < this.rows; i++){
+      for(let j = 0; j < this.cols; j++){
+        if(Math.random() >= 0.5){
+          this.setAlive(i,j);
+        } else {
+          this.setDead(i,j);
+        }
+      }
+    }
+    console.log(this.world_model);
+    this.notifyObservers();
+  }
 
   notifyObservers(){
     for(let i = 0; i < this.observers.length; i++){
-      console.log("HI")
+      //console.log("HI")
       //console.log(this.world_model);
       this.observers[i].notify(this.world_model); //TODO: pull, push? etc. 
     }
@@ -50,7 +61,7 @@ class Model{
     console.log(this.world_model);
     for(let i = 0; i < this.rows; i++){
       for(let j = 0; j < this.cols; j++){
-        this.world_model[i][j] = 0;
+        this.setDead(i,j);
       }
     }
     console.log(this.world_model);
@@ -119,7 +130,7 @@ class Model{
 
   
   async startProgressLoop(){
-    global_pause_controller = false;
+    //global_pause_controller = false;
     //this.pause = true; //FIXME: could the problem be a binding issue? this doesn't, after the first call..
     while(true){
         //if(!global_pause_controller){
@@ -186,7 +197,7 @@ class View{
     this.rows = rows;
     this.cols = cols;
     this.idsMatrix = Array(rows).fill().map(() => Array(cols).fill(0));
-    console.log(this.idsMatrix);
+    //console.log(this.idsMatrix);
     this.initScene();
     this.editing = false;
 
@@ -205,7 +216,7 @@ class View{
   }
 
   notify(newState){
-    console.log("HELLO")
+    //console.log("HELLO")
     //console.log(newState);
     for( let i = 0; i < this.rows; i++){
       for( let j = 0; j < this.cols; j++){
@@ -290,6 +301,17 @@ class View{
     return coords;
   }
 
+  pauseMode(){
+    let r = 38, g = 38, b = 38;
+    document.body.style.backgroundColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+    
+    //gsap.to()
+  }
+
+  playMode(){
+    document.body.style.backgroundColor = "black";
+  }
+
   editModel(object_id){
     //calls the controller, which accepts the user input
     //this methods simply reverse searches coordinates, given object id
@@ -300,18 +322,6 @@ class View{
   setCellAlive(i, j){ //per qualche ragione, la visualizzazione delle celle è "trasposta", in un certo senso.. ma non è un grosso problema
     
     const cell = this.scene.getObjectById( this.idsMatrix[i][j], true );
-    /*gsap.to( cell.position, {
-      duration: 0.5,
-      z: 2
-    } );
-    gsap.to( cell.material.color, {
-      duration: 0.5,
-      r: 0,
-      g: 255,
-      b: 0
-    } );*/
-
-
     var target = cell;
     var initial = new THREE.Color(cell.material.color.getHex());
     var value = new THREE.Color(0x00ff00);
@@ -446,11 +456,14 @@ class Controller{
     this.gui_controls = {
       //Play: this.model.playTrigger,
       //Pause: this.model.pauseTrigger, 
-      Play: () => { this.model.playTrigger() },
-      Pause: () => { this.model.pauseTrigger() },
+      Play: () => { this.model.playTrigger();
+                    this.view.playMode(); },
+      Pause: () => { this.model.pauseTrigger();
+                     this.view.pauseMode();    },
       Clear: () => { this.model.clearModel() },
       Edit: false,
       Epoch_time: this.model.epoch_time,
+      Random_config: () => { this.model.randomConfiguration() }
 
     };
     
@@ -467,6 +480,7 @@ class Controller{
     this.dat_gui.add(this.gui_controls, "Epoch_time").onChange((newTime) => {
       this.model.setEpochTime(newTime);
     }).name("Epoch time");
+    this.dat_gui.add(this.gui_controls, "Random_config").name("Random configuration");
     this.dat_gui.open();
   }
   
@@ -478,7 +492,8 @@ const model = new Model(60, 60, 1000);
 const application = new Controller(model, view);
 view.setController(application); //FIXME: there's a much better way but im tired right now REFACTOR
 
-
+model.randomConfiguration();
+/*
 model.setAlive(2,3);
 model.setAlive(2,4);
 model.setAlive(2,5);
@@ -489,12 +504,12 @@ model.setAlive(3,6);
 model.setAlive(6,4);
 model.setAlive(6,5);
 model.setAlive(7,5);
-model.setAlive(7,6);
+model.setAlive(7,6);*/
 
 model.startProgressLoop();
 //view.initScene();
 view.animate();
-
+//view.pauseMode();
 //console.log(view.scene.children);
 
 
