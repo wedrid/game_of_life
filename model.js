@@ -1,5 +1,5 @@
 
-class Model{
+export default class Model{
     //to make more efficient, it is probably a good idea, when calculating the dead and alive cells, to calculate the ones that changed status, instead of updating the whole graphical cells
     constructor(rows, cols, epoch_time) {
       //the gol-world will be represented as a 2x2 matrix of which states are 0 - dead or 1 - alive

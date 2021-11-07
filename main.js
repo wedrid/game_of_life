@@ -1,12 +1,8 @@
-//Here after, I try to improve my js.. the first trial was pretty bad code
-//Some js initialization 
-// Find the latest version by visiting https://cdn.skypack.dev/three.
-import * as THREE from 'https://cdn.skypack.dev/three@0.126.1';
-import { gsap } from 'gsap';
-import {OrbitControls} from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js';
-import * as dat from 'dat.gui';
-
-
+import Model from './model.js';
+import View from './view.js';
+import Controller from './controller.js';
+ 
+/*
 class Model{
   //to make more efficient, it is probably a good idea, when calculating the dead and alive cells, to calculate the ones that changed status, instead of updating the whole graphical cells
   constructor(rows, cols, epoch_time) {
@@ -157,11 +153,11 @@ class Model{
         } else {
           //else, if not on border, check g.o.l. rules..
           //Necessary to count the number of neighbors
-          /*   Quick check..            i = 5, j = 5 //principio di induzione dell'ingegnere
-          [i-1][j-1] [i-1][j] [i-1][j+1]  --> 4,4  4,5  4,6
-          [i][j-1]   [i][j]   [i][j+1]        5,4  5,5  5,6
-          [i+1][j-1] [i+1][j] [i+1][j+1]      6,4  6,5  6,6
-          */ 
+          //   Quick check..            i = 5, j = 5 //principio di induzione dell'ingegnere
+          // [i-1][j-1] [i-1][j] [i-1][j+1]  --> 4,4  4,5  4,6
+          // [i][j-1]   [i][j]   [i][j+1]        5,4  5,5  5,6
+          // [i+1][j-1] [i+1][j] [i+1][j+1]      6,4  6,5  6,6
+          
           //console.log(this.world_model);
           var numNeighbors = this.world_model[i-1][j-1] + this.world_model[i-1][j] + this.world_model[i-1][j+1] + this.world_model[i][j-1] + this.world_model[i][j+1] + this.world_model[i+1][j-1] + this.world_model[i+1][j] + this.world_model[i+1][j+1];
           //console.log(numNeighbors);
@@ -342,14 +338,7 @@ class View{
       },
       "<");
 
-      /*.to( cell.material.color, { //FIXME: can't figure out the color transition :(
-        duration: 0.5,
-        r: 0,
-        g: 255,
-        b: 0, 
-        a: 0,
-        ease:"sine",
-      }, "<" );*/
+      
     //cell.material.color.r = 250;
     //cell.material.color.g = 0;
     //cell.material.color.b = 0;
@@ -485,7 +474,7 @@ class Controller{
   }
   
 }
-
+*/
 
 const view = new View(60, 60);
 const model = new Model(60, 60, 1000);
