@@ -4,13 +4,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview --port 8080"
+    "serve": "vite preview --port 8080",
+    "deploy": "gh-pages -d dist"
   },
   "devDependencies": {
     "vite": "^2.6.4"
   },
+  "homepage": "https://wedrid.github.io/game_of_life",
   "dependencies": {
     "dat.gui": "^0.7.7",
+    "gh-pages": "^3.2.3",
     "gsap": "^3.8.0"
   }
 }
