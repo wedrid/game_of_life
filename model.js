@@ -31,7 +31,7 @@ export default class Model{
           }
         }
       }
-      console.log(this.world_model);
+      //console.log(this.world_model);
       this.notifyObservers();
     }
   
@@ -49,22 +49,22 @@ export default class Model{
     }
   
     clearModel(){
-      console.log("CLEARING");
-      console.log(this.world_model);
+      //console.log("CLEARING");
+      //console.log(this.world_model);
       for(let i = 0; i < this.rows; i++){
         for(let j = 0; j < this.cols; j++){
           this.setDead(i,j);
         }
       }
-      console.log(this.world_model);
-      //this.notifyObservers();
+      //console.log(this.world_model);
+      this.notifyObservers();
     }
   
     pauseTrigger(){
-      console.log("TRYING TO PAUSE");
+      //console.log("TRYING TO PAUSE");
       //global_pause_controller = true;
       this.pause = true;
-      console.log(this.pause)
+      //console.log(this.pause)
     }
   
     playTrigger(){
@@ -127,10 +127,10 @@ export default class Model{
       while(true){
           //if(!global_pause_controller){
           if(!this.pause){
-          console.log(this.pause);
+          //console.log(this.pause);
           this.calculateNextEpoch();
           //this.temp += 1;
-          console.log(this.temp);
+          //console.log(this.temp);
           }
         await this.sleep(this.epoch_time);
       }

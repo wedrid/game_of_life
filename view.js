@@ -18,8 +18,8 @@ export default class View{
   
   
       document.addEventListener('mousedown', () => {
-        view.mouse.x = (event.clientX / innerWidth) * 2 - 1
-        view.mouse.y = -(event.clientY / innerHeight) * 2 + 1
+        this.mouse.x = (event.clientX / innerWidth) * 2 - 1
+        this.mouse.y = -(event.clientY / innerHeight) * 2 + 1
         //console.log(view.mouse)
       })
   
@@ -87,7 +87,7 @@ export default class View{
       this.mouse.x = undefined
       this.mouse.y = undefined
       
-      console.log("Enabled editing mode!");
+      //console.log("Enabled editing mode!");
       this.editing = true;
       this.orbit.enabled = false;
     }
@@ -105,11 +105,11 @@ export default class View{
       for(i = 0; i < this.idsMatrix.length; i++){
         const arr = this.idsMatrix[i];
         index = arr.indexOf(object_id);
-        console.log(index)
+        //console.log(index)
         if(index >= 0){
           coords[0] = i;
           coords[1] = index;
-          console.log(coords);
+          //console.log(coords);
         }
       }
   

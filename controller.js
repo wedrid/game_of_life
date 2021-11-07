@@ -9,6 +9,7 @@ export default class Controller{
       this.view = view;
       //this.dat_gui = new dat.GUI();
       this.configureDatGui();
+      this.view.setController(this);
     }
   
     updateModel(i, j){
@@ -47,7 +48,7 @@ export default class Controller{
       });
       this.dat_gui.add(this.gui_controls, "Epoch_time").onChange((newTime) => {
         this.model.setEpochTime(newTime);
-      }).name("Epoch time");
+      }).name("Epoch time (ms)").min(10);
       this.dat_gui.add(this.gui_controls, "Random_config").name("Random configuration");
       this.dat_gui.open();
     }
