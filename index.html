@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/game_of_life/assets/favicon.17e50649.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+    <style>
+        body{
+            margin: 0;
+            background: rgb(0,0,0);
+        }
+        .webgl
+        {
+            position: fixed;
+            top: 0;
+            left: 0;
+            outline: none;
+        }
+        #my-gui-container{
+            position: absolute; 
+            top: 0; 
+            right: 0;
+            z-index: 100;
+        }
+
+    </style>
+    <script type="module" crossorigin src="/game_of_life/assets/index.a377f0d3.js"></script>
+    <link rel="modulepreload" href="/game_of_life/assets/vendor.d628c093.js">
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="my-gui-container"></div>
+    <canvas class="webgl"></canvas>
+    
+  </body>
+</html>
