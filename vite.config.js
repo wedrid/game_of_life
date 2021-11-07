@@ -1,4 +1,4 @@
 // vite.config.js
 export default {
-    // config options
+    base: "game_of_life"
   }
