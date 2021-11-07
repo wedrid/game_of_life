@@ -143,15 +143,15 @@ export default class View{
   
       gsap.timeline()
         .to( cell.position, {
-          duration: 0.5,
+          duration: 1.5,
           z: 2, 
-          ease: "expo"
+          ease: "power1"
         } ).to(initial, {     //This syntax is relevant to GSAP's TweenLite, I'll provide a link to the docs
-            duration: 0.5,
+            duration: 1.5,
             r: value.r,
             g: value.g,
             b: value.b,
-            ease: "expo",
+            ease: "power1",
             onUpdate: function() { target.material.color = initial; },
             
         },
@@ -179,15 +179,15 @@ export default class View{
   
       gsap.timeline()
         .to( cell.position, {
-          duration: 0.5,
+          duration: 1.5,
           z: 0, 
-          ease: "expo"
+          ease: "power1"
         } ).to(initial, {     //This syntax is relevant to GSAP's TweenLite, I'll provide a link to the docs
-            duration: 0.5,
+            duration: 1.5,
             r: value.r,
             g: value.g,
             b: value.b,
-            ease: "expo",
+            ease: "power1",
             onUpdate: function() { target.material.color = initial; },
             
         },
