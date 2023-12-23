@@ -14,7 +14,7 @@ Though it would be nice if the site deployed in https://wedrid.github.io/game_of
 # Try the code
 vitejs [https://vitejs.dev/] was used for some front end toolings. 
 vitejs was installed through the npm package manager [https://nodejs.org/en/] through the command npm install vite
-Just clicking index.html typicall does not work due to some CORS issues (it is probably possible through some 'magheggi'). 
+Just clicking index.html typicall does not work due to some CORS issues. 
 
 If the whole repo is cloned, it is probably enough to simply type the command 'npm run dev' to take a look to the code in "developer mode" (which, in this case, is the same as the deployed code).
 
