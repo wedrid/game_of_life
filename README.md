@@ -9,7 +9,7 @@ Commands include:
 - Change the epoch time: the default epoch time is 1s (1000 ms). The minimum value is set to be 10ms, a maximum value is not specified. 
 - Random: generates a random configuration of the world. 
 
-Though it would be nice if the site deployed in https://wedrid.github.io/game_of_life/ if the site isn't available the steps to execute the program can be the following.
+The application should be deployed at the following link: https://wedrid.github.io/game_of_life/ if the site isn't available the steps to execute the program can be the following.
 
 # Try the code
 vitejs [https://vitejs.dev/] was used for some front end toolings. 
