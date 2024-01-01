@@ -16,7 +16,9 @@ vitejs [https://vitejs.dev/] was used for some front end toolings.
 vitejs was installed through the npm package manager [https://nodejs.org/en/] through the command npm install vite
 Just clicking index.html typicall does not work due to some CORS issues. 
 
-If the whole repo is cloned, it is probably enough to simply type the command 'npm run dev' to take a look to the code in "developer mode" (which, in this case, is the same as the deployed code).
+If the whole repo is cloned, if you have npm installed, then running 'npm run dev' is sufficient to take a look to the code in "developer mode" (which, in this case, is the same as the deployed code).
+With the last commit, the intallation of vite is included as a requirement of the project, and should there for not ask you to install vite on your system. 
+
 
 # Requirements: 
 - A working visual simulation: OK
