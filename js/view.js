@@ -4,14 +4,14 @@ import {OrbitControls} from 'https://unpkg.com/three@0.126.1/examples/jsm/contro
 
 export default class View{
   
-    constructor(rows, cols, controller)
+    constructor(model)
     { 
       //this.height = height;
       //this.width = width;
       //this.controller = controller;
-      this.rows = rows;
-      this.cols = cols;
-      this.idsMatrix = Array(rows).fill().map(() => Array(cols).fill(0));
+      this.rows = model.getRows();
+      this.cols = model.getCols();
+      this.idsMatrix = Array(this.rows).fill().map(() => Array(this.cols).fill(0));
       //console.log(this.idsMatrix);
       this.initScene();
       this.editing = false;

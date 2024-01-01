@@ -15,6 +15,14 @@ export default class Model{
       this.observers = [];
       //this.temp = 1;
     }
+
+    getRows(){
+      return this.rows;
+    }
+
+    getCols(){
+      return this.cols;
+    }
   
     setEpochTime(epochTime){
       this.epoch_time = epochTime;
@@ -176,4 +184,5 @@ export default class Model{
         //console.log(nextState);
         this.notifyObservers(); 
     }
+
   }
